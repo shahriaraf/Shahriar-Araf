@@ -1,0 +1,77 @@
+@import "tailwindcss";
+/*
+ * NOTE: The Google Fonts @import that used to live here (Bebas Neue,
+ * Manrope, Oxanium, Rubik Glitch, Space Grotesk, Syne) has been removed.
+ * None of those fonts/utility classes (.font-bebas, .font-body, .font-cyber,
+ * .font-glitch, .font-space, .font-art) were actually used anywhere in the
+ * app, yet the @import forced a render-blocking network request to
+ * fonts.googleapis.com on every page load. All fonts actually in use
+ * (Inter, Instrument Serif, JetBrains Mono) are already loaded through
+ * next/font, which self-hosts them with zero extra network requests and no
+ * render-blocking behavior.
+ */
+
+:root {
+  --background: #131313;
+  --foreground: #ffffff;
+}
+
+/* === Custom Cursor (desktop/mouse only) ===
+   Scoped to .app-shell (the public-site wrapper in components/AppShell.tsx)
+   instead of html/body/* globally. Sanity Studio at /studio renders outside
+   .app-shell and needs its normal cursor + native scrollbars — hiding them
+   there was breaking Studio's own scrollable panels. */
+@media (hover: hover) and (pointer: fine) {
+  .app-shell, .app-shell * {
+    cursor: none !important;
+    /* Hide scrollbar for Chrome, Safari, and Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Hide scrollbar for Firefox */
+  scrollbar-width: none;
+  
+  /* Hide scrollbar for IE and Edge */
+  -ms-overflow-style: none;
+  }
+}
+
+/* === Font Utilities === */
+/* Only .font-code is actually used in the app (app/page.tsx); the other
+   utility classes previously here (.font-glitch, .font-cyber, .font-space,
+   .font-art, .font-body, .font-bebas) referenced fonts that were never
+   applied anywhere and have been removed along with their Google Fonts
+   import above. */
+.font-code { font-family: "JetBrains Mono", monospace; }
+
+/* NOTE: `scroll-behavior: smooth` is intentionally NOT set here. The site
+   uses Lenis (see app/providers/SmoothScroll.tsx) for buttery smooth,
+   inertia-based scrolling. Native CSS smooth-scroll fights with Lenis's own
+   transform-driven scroll loop and produces jittery, inconsistent motion —
+   removing it is what makes scrolling and in-page navigation feel smooth. */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* === Box Sizing === */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* === Prevent horizontal scroll === */
+body {
+  overflow-x: hidden;
+  min-width: 320px;
+}
+
+/* === Better tap highlight for mobile === */
+a, button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* === Image rendering === */
+img {
+  max-width: 100%;
+  height: auto;
+}
