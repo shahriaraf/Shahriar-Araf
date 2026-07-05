@@ -16,6 +16,17 @@
   --foreground: #ffffff;
 }
 
+html,
+body {
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* IE & Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;              /* Chrome, Safari, Opera */
+}
+
 .app-shell {
   scrollbar-width: none;      /* Firefox */
   -ms-overflow-style: none;   /* IE & Edge */
