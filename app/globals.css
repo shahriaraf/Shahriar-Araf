@@ -16,6 +16,15 @@
   --foreground: #ffffff;
 }
 
+.app-shell {
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* IE & Edge */
+}
+
+.app-shell::-webkit-scrollbar {
+  display: none;              /* Chrome, Safari, Opera */
+}
+
 /* === Custom Cursor (desktop/mouse only) ===
    Scoped to .app-shell (the public-site wrapper in components/AppShell.tsx)
    instead of html/body/* globally. Sanity Studio at /studio renders outside
