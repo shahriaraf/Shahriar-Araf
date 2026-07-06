@@ -650,7 +650,7 @@ export default function Skills({ skills }: SkillsProps) {
   const colSpan = MAX_COL - MIN_COL;
   const rowSpan = MAX_ROW - MIN_ROW;
 
-  const nodePositions = activeCat.skills.slice(0, 10).map(...) => {
+  const nodePositions = activeCat.skills.slice(0, 10).map((_, i) => {
     const cell = scatter[i % scatter.length];
     const nx = PAD_X + ((cell.col - MIN_COL) / colSpan) * usableW;
     const ny = PAD_Y + ((cell.row - MIN_ROW) / rowSpan) * usableH;
