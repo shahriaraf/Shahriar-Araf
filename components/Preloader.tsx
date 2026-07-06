@@ -52,38 +52,33 @@ export default function Preloader() {
             }}
           />
 
-          {/* Grain texture — makes it feel premium */}
+          {/* Grain texture — makes it feel premium (static opacity, no blend-mode compositing cost) */}
           <div
-            className="absolute inset-0 pointer-events-none opacity-[0.08] mix-blend-overlay"
+            className="absolute inset-0 pointer-events-none opacity-[0.05]"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
             }}
           />
 
-          {/* WELCOME IMAGE — dramatic entrance */}
+          {/* WELCOME IMAGE — dramatic entrance (transform + opacity only — GPU-composited, no blur/3D repaint cost) */}
           <motion.div
             initial={{
               opacity: 0,
-              scale: 0.7,
-              y: -80,
-              filter: "blur(30px)",
-              rotateX: -25,
+              scale: 0.85,
+              y: -40,
             }}
             animate={{
               opacity: 1,
               scale: 1,
               y: 0,
-              filter: "blur(0px)",
-              rotateX: 0,
             }}
             transition={{
-              duration: 1.6,
+              duration: 1,
               ease: [0.19, 1, 0.22, 1], // expo-out — dramatic settle
             }}
             className="relative h-[85vh] w-auto"
             style={{
-              perspective: "1000px",
-              transformStyle: "preserve-3d",
+              willChange: "transform, opacity",
             }}
           >
             <Image
@@ -98,20 +93,6 @@ export default function Preloader() {
               }}
             />
           </motion.div>
-
-          {/* Subtle floating motion after entrance */}
-          <motion.div
-            className="absolute inset-0 pointer-events-none"
-            animate={{
-              y: [0, -8, 0],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 1.8,
-            }}
-          />
         </motion.div>
       )}
     </AnimatePresence>
