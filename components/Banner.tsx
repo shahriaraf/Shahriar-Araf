@@ -557,7 +557,7 @@ export default function Banner() {
         }}
       >
         {SOCIALS.map((s) => (
-          <a
+          
             key={s.label}
             href={s.href}
             target="_blank"
@@ -595,6 +595,30 @@ export default function Banner() {
           }}
         />
 
+        {/* ── Duotone filter def — remaps grayscale to the site's own
+             bg (#101010) → emphasis (#f4f0e8) range, so the photo always
+             matches the palette exactly, even if the palette changes later. */}
+        <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true">
+          <defs>
+            <filter id="duotone-headshot" colorInterpolationFilters="sRGB">
+              {/* Standard luminance-weighted grayscale */}
+              <feColorMatrix
+                type="matrix"
+                values="0.2126 0.7152 0.0722 0 0
+                        0.2126 0.7152 0.0722 0 0
+                        0.2126 0.7152 0.0722 0 0
+                        0      0      0      1 0"
+              />
+              {/* Remap black→white to C.bg→C.emphasis per channel */}
+              <feComponentTransfer>
+                <feFuncR type="table" tableValues="0.0627 0.9569" />
+                <feFuncG type="table" tableValues="0.0627 0.9412" />
+                <feFuncB type="table" tableValues="0.0627 0.9098" />
+              </feComponentTransfer>
+            </filter>
+          </defs>
+        </svg>
+
         {/* Photo container */}
         <div
           className="photo-container"
@@ -624,7 +648,7 @@ export default function Banner() {
               WebkitFontSmoothing:
                 "antialiased" as React.CSSProperties["WebkitFontSmoothing"],
               transform: "translateZ(0)",
-              filter: "grayscale(1) contrast(1.02)",
+              filter: "url(#duotone-headshot) contrast(1.05)",
             }}
           />
 
@@ -825,7 +849,7 @@ export default function Banner() {
               <polyline points="12 5 19 12 12 19" />
             </svg>
           </a>
-          <a
+          
             href="/assets/Araf-Full-Stack-Resume.pdf"
             download
             className="cta-secondary"
