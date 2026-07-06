@@ -44,21 +44,23 @@ export default function Cursor() {
     const onMove = (e: MouseEvent) => {
       pos.current = { x: e.clientX, y: e.clientY };
 
-      // Dot snaps instantly
+      // Dot snaps instantly — transform only, no layout cost
       if (dotRef.current) {
-        dotRef.current.style.left = `${e.clientX}px`;
-        dotRef.current.style.top  = `${e.clientY}px`;
+        dotRef.current.style.transform =
+          `translate3d(${e.clientX}px, ${e.clientY}px, 0) translate(-50%, -50%)`;
       }
 
+      // Cheap, layout-free hover check — no getComputedStyle (that call forces
+      // a synchronous style/layout recalc on every mousemove, which is
+      // expensive enough on its own to visibly stutter scroll/GSAP animations
+      // since mousemove keeps firing while the user scrolls).
       const target = e.target as HTMLElement;
       const isClickable =
         target.tagName === "A" ||
         target.tagName === "BUTTON" ||
-        !!target.closest("a") ||
-        !!target.closest("button") ||
-        window.getComputedStyle(target).cursor === "pointer";
+        target.closest("a, button, [data-cursor-pointer]") !== null;
 
-      setHovering(isClickable);
+      setHovering((prev) => (prev === isClickable ? prev : isClickable));
     };
 
     const onDown = () => setClicking(true);
@@ -71,15 +73,10 @@ export default function Cursor() {
 
       const x = ring.current.x;
       const y = ring.current.y;
+      const t = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
 
-      if (ringRef.current) {
-        ringRef.current.style.left = `${x}px`;
-        ringRef.current.style.top  = `${y}px`;
-      }
-      if (glowRef.current) {
-        glowRef.current.style.left = `${x}px`;
-        glowRef.current.style.top  = `${y}px`;
-      }
+      if (ringRef.current) ringRef.current.style.transform = t;
+      if (glowRef.current) glowRef.current.style.transform = t;
 
       rafId.current = requestAnimationFrame(animate);
     };
@@ -107,15 +104,16 @@ export default function Cursor() {
         ref={dotRef}
         style={{
           position:        "fixed",
+          top:             0,
+          left:            0,
           width:           clicking ? "4px" : "6px",
           height:          clicking ? "4px" : "6px",
           borderRadius:    "50%",
           backgroundColor: C.cursor,
           pointerEvents:   "none",
           zIndex:          99999,
-          transform:       "translate(-50%, -50%)",
           transition:      "width 0.12s ease, height 0.12s ease",
-          willChange:      "left, top",
+          willChange:      "transform",
           boxShadow:       `0 0 8px 1px ${C.cursorShadow}`,
           mixBlendMode:    "difference",
         }}
@@ -126,19 +124,20 @@ export default function Cursor() {
         ref={ringRef}
         style={{
           position:     "fixed",
+          top:          0,
+          left:         0,
           width:        clicking ? "22px" : hovering ? "56px" : "34px",
           height:       clicking ? "22px" : hovering ? "56px" : "34px",
           borderRadius: "50%",
           border:       `1px solid ${hovering ? C.cursor : C.cursorDim}`,
           pointerEvents:"none",
           zIndex:       99998,
-          transform:    "translate(-50%, -50%)",
           transition:   [
             "width 0.35s cubic-bezier(0.25,0.46,0.45,0.94)",
             "height 0.35s cubic-bezier(0.25,0.46,0.45,0.94)",
             "border-color 0.25s ease",
           ].join(", "),
-          willChange:   "left, top",
+          willChange:   "transform",
           mixBlendMode: "difference",
         }}
       />
@@ -148,15 +147,16 @@ export default function Cursor() {
         ref={glowRef}
         style={{
           position:     "fixed",
+          top:          0,
+          left:         0,
           width:        hovering ? "90px" : "56px",
           height:       hovering ? "90px" : "56px",
           borderRadius: "50%",
           background:   `radial-gradient(circle, ${hovering ? C.cursorGlowHover : C.cursorGlow} 0%, transparent 70%)`,
           pointerEvents:"none",
           zIndex:       99997,
-          transform:    "translate(-50%, -50%)",
           transition:   "width 0.4s ease, height 0.4s ease, background 0.3s ease",
-          willChange:   "left, top",
+          willChange:   "transform",
         }}
       />
     </>
