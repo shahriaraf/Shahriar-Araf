@@ -146,14 +146,15 @@ function computeExitPoints(
     const gy = snap(p.y);
     const dx = gx - cx;
     const dy = gy - cy;
-    const side: Side =
-      Math.abs(dx) / hw >= Math.abs(dy) / hh
-        ? dx >= 0
-          ? "right"
-          : "left"
-        : dy >= 0
-        ? "bottom"
-        : "top";
+    // Classify by angle from center — a node visually above the hub
+    // should exit through the top edge, regardless of hub aspect ratio.
+    const angle = Math.atan2(dy, dx); // -PI..PI
+    const a = Math.abs(angle);
+    let side: Side;
+    if (a <= Math.PI / 4) side = "right";
+    else if (a >= (3 * Math.PI) / 4) side = "left";
+    else if (angle < 0) side = "top";
+    else side = "bottom";
     return { i, gx, gy, side };
   });
 
