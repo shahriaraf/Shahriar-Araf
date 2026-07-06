@@ -23,6 +23,8 @@ export function SectionStack({ panels }: { panels: PanelConfig[] }) {
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
+    // Keeps pinned transforms on their own GPU layer instead of repainting.
+    gsap.config({ force3D: true });
     const triggers: ScrollTrigger[] = [];
 
     panelRefs.current.forEach((panel, i) => {
@@ -42,6 +44,7 @@ export function SectionStack({ panels }: { panels: PanelConfig[] }) {
         end: "bottom top",
         pin: true,
         pinSpacing: false,
+        anticipatePin: 1,
       });
 
       triggers.push(st);
