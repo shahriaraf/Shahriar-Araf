@@ -70,72 +70,42 @@ function hubDims(canvasW: number) {
 // so no two lines can ever overlap at the source.
 const EXIT_STEP = 22;
 
-// Row 8 sits closest to the hub's vertical center; rows 2 and 13 sit
-// farthest from it. To guarantee connector lines never cross, the column
-// (horizontal distance from the hub) is nested to match: the row closest
-// to the hub also gets the column closest to the hub, and the row
-// farthest from the hub gets the column farthest away. Every column value
-// here is also kept far enough out to clear the hub's own width (260px) —
-// otherwise the "closest" tier would land its icons on top of the hub box
-// instead of outside it.
-const CAT_SCATTER: Record<string, { col: number; row: number }[]> = {
-  frontend: [
-    { col: 1.75, row: 2 },
-    { col: 14.25, row: 2 },
-    { col: 3.25, row: 5 },
-    { col: 12.75, row: 5 },
-    { col: 4, row: 8 },
-    { col: 12, row: 8 },
-    { col: 2.5, row: 11 },
-    { col: 13.5, row: 11 },
-    { col: 1, row: 13 },
-    { col: 15, row: 13 },
-  ],
-  backend: [
-    { col: 1.75, row: 2 },
-    { col: 14.25, row: 2 },
-    { col: 3.25, row: 5 },
-    { col: 12.75, row: 5 },
-    { col: 4, row: 8 },
-    { col: 12, row: 8 },
-    { col: 2.5, row: 11 },
-    { col: 13.5, row: 11 },
-    { col: 1, row: 13 },
-    { col: 15, row: 13 },
-  ],
-  devops: [
-    { col: 1.75, row: 2 },
-    { col: 14.25, row: 2 },
-    { col: 3.25, row: 5 },
-    { col: 12.75, row: 5 },
-    { col: 4, row: 8 },
-    { col: 12, row: 8 },
-    { col: 2.5, row: 11 },
-    { col: 13.5, row: 11 },
-    { col: 1, row: 13 },
-    { col: 15, row: 13 },
-  ],
-};
+// Generates N branch anchor points evenly spaced in a ring around the hub,
+// starting at the top and going clockwise — so adding a new skill in Sanity
+// always gets its own dedicated branch instead of being capped or having to
+// share/overwrite an existing slot. Works for any count (1, 10, 25...).
+const CENTER_COL = 8;
+const CENTER_ROW = 7.5;
+const COL_RADIUS = 7; // reaches col 1 and col 15 at the widest points
+const ROW_RADIUS = 5.5; // reaches row 2 and row 13 at the widest points
 
-// On mobile, the row-8 pair (level with the hub's vertical center) ends up
-// with the smallest total distance from the hub of any branch, since row
-// offset contributes nothing there — only column offset does. That's the
-// CSS3 / Bootstrap pair looking cramped against "Frontend" on narrow
-// screens. Nudging just their column outward (mobile-only, desktop/tablet
-// untouched) gives them the same breathing room as the other branches.
+function generateScatter(count: number): { col: number; row: number }[] {
+  if (count <= 0) return [];
+  return Array.from({ length: count }, (_, i) => {
+    const angle = -Math.PI / 2 + (i * 2 * Math.PI) / count;
+    return {
+      col: CENTER_COL + Math.cos(angle) * COL_RADIUS,
+      row: CENTER_ROW + Math.sin(angle) * ROW_RADIUS,
+    };
+  });
+}
+
+// On narrow screens the branches are pulled proportionally closer to the
+// hub (rather than singling out one specific row like the old fixed
+// 10-point layout did), so any number of generated branch points stays
+// within the canvas instead of running off-screen.
 const MOBILE_BREAKPOINT = 640;
-const MOBILE_MID_ROW_COL = 1; // was 4 / 12 → now 2.5 / 13.5 (matches row-11 spacing)
+const MOBILE_RADIUS_SCALE = 0.72;
 
 function getScatterForViewport(
   scatter: { col: number; row: number }[],
   isMobile: boolean
 ) {
   if (!isMobile) return scatter;
-  return scatter.map((cell) =>
-    cell.row === 8
-      ? { ...cell, col: cell.col < 8 ? MOBILE_MID_ROW_COL : 16 - MOBILE_MID_ROW_COL }
-      : cell
-  );
+  return scatter.map((cell) => ({
+    col: CENTER_COL + (cell.col - CENTER_COL) * MOBILE_RADIUS_SCALE,
+    row: CENTER_ROW + (cell.row - CENTER_ROW) * MOBILE_RADIUS_SCALE,
+  }));
 }
 
 function snap(v: number) {
@@ -634,7 +604,7 @@ export default function Skills({ skills }: SkillsProps) {
   const activeCat = grouped[activeCatIdx];
   const isMobile = canvasSize.w > 0 && canvasSize.w < MOBILE_BREAKPOINT;
   const scatter = getScatterForViewport(
-    CAT_SCATTER[activeCat.id] ?? CAT_SCATTER.frontend,
+    generateScatter(activeCat.skills.length),
     isMobile
   );
 
@@ -650,8 +620,8 @@ export default function Skills({ skills }: SkillsProps) {
   const colSpan = MAX_COL - MIN_COL;
   const rowSpan = MAX_ROW - MIN_ROW;
 
-  const nodePositions = activeCat.skills.slice(0, 10).map((_, i) => {
-    const cell = scatter[i % scatter.length];
+  const nodePositions = activeCat.skills.map((_, i) => {
+    const cell = scatter[i];
     const nx = PAD_X + ((cell.col - MIN_COL) / colSpan) * usableW;
     const ny = PAD_Y + ((cell.row - MIN_ROW) / rowSpan) * usableH;
     return { x: snap(nx), y: snap(ny) };
@@ -789,7 +759,7 @@ export default function Skills({ skills }: SkillsProps) {
             height={hubDims(canvasSize.w).h}
           />
 
-          {activeCat.skills.slice(0, 10).map((skill, i) => (
+          {activeCat.skills.map((skill, i) => (
             <SkillNode
               key={`${activeCat.id}-${skill._id}`}
               skill={skill}
