@@ -451,7 +451,7 @@ export default function Banner() {
           transform: translateY(3px);
         }
 
-        /* ── Social rail lines ── */
+        /* ── Social rail lines (desktop/tablet fixed rail) ── */
         .social-rail {
           display:flex; flex-direction:column; align-items:center; gap:14px;
         }
@@ -460,6 +460,11 @@ export default function Banner() {
         }
         .social-rail::before { background:linear-gradient(to bottom,transparent,${C.borderStrong}); }
         .social-rail::after  { background:linear-gradient(to top,transparent,${C.borderStrong}); }
+
+        /* ── In-flow social row shown under the CTAs on mobile only ── */
+        .mobile-social{
+          display:none;
+        }
 
         /* ── Swap dot base styling ── */
         .swap-dot {
@@ -487,9 +492,10 @@ export default function Banner() {
         }
 
         @media(max-width:768px){
-          /* Scroll indicator stays hidden — it's decorative, not a
-             social link, and has nowhere sensible to sit on mobile. */
-          .right-indicator{display:none!important;}
+          /* On mobile the fixed side rail doesn't fit the centered
+             layout, so it's hidden in favor of .mobile-social, which
+             sits inline right after the CTA row instead. */
+          .left-social,.right-indicator{display:none!important;}
 
           .hero-content{padding:20px 20px 20px 20px!important;text-align:center; align-items:center; max-width:100% !important;}
           /* Let the photo cover the full width behind the centered text on
@@ -531,27 +537,18 @@ export default function Banner() {
             justify-content: center !important;
           }
 
-          /* Social icons: instead of hiding them, drop the vertical
-             side-rail (it would collide with the centered hero text) and
-             turn it into a compact horizontal row pinned to the bottom
-             of the viewport, above the CTA row's natural resting point. */
-          .left-social{
-            left: 50% !important;
-            top: auto !important;
-            bottom: 16px !important;
-            transform: translateX(-50%) !important;
-            flex-direction: row !important;
-            gap: 10px !important;
-            z-index: 30 !important;
+          /* Social icons, positioned in normal flow directly under the
+             CTA row so they sit close beneath the buttons rather than
+             floating at the bottom of the viewport. */
+          .mobile-social{
+            display:flex;
+            justify-content:center;
+            gap:10px;
+            margin-top:14px;
           }
-          .left-social::before, .left-social::after{
-            display: none !important;
-          }
-          .left-social .social-btn{
-            width: 36px !important;
-            height: 36px !important;
-            background: ${C.bg}cc !important;
-            backdrop-filter: blur(6px);
+          .mobile-social .social-btn{
+            width:36px;
+            height:36px;
           }
         }
       `}</style>
@@ -571,7 +568,7 @@ export default function Banner() {
         }}
       />
 
-      {/* ── Left social rail ── */}
+      {/* ── Left social rail (desktop/tablet) ── */}
       <div
         className="left-social social-rail"
         style={{
@@ -897,6 +894,22 @@ export default function Banner() {
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
           </a>
+        </div>
+
+        {/* Mobile-only social row — sits directly under the CTAs */}
+        <div className="mobile-social">
+          {SOCIALS.map((s) => (
+            <a
+              key={s.label}
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="social-btn"
+              title={s.label}
+            >
+              {s.icon}
+            </a>
+          ))}
         </div>
       </section>
     </main>
