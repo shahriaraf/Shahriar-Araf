@@ -583,7 +583,7 @@ export default function Banner() {
         }}
       >
         {SOCIALS.map((s) => (
-          
+          <a
             key={s.label}
             href={s.href}
             target="_blank"
@@ -875,7 +875,7 @@ export default function Banner() {
               <polyline points="12 5 19 12 12 19" />
             </svg>
           </a>
-          
+          <a
             href="/assets/Araf-Full-Stack-Resume.pdf"
             download
             className="cta-secondary"
