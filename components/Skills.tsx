@@ -61,15 +61,6 @@ function hubDims(canvasW: number) {
   return { w: HUB_W * scale, h: HUB_H * scale };
 }
 
-// Spacing between adjacent connector exit points along a hub edge.
-// This is the key fix: previously each line's exit point was calculated
-// independently by clamping to the target position, which caused several
-// lines (whenever nodes shared a side of the hub) to land on the exact
-// same point and draw on top of one another. Now every node on a given
-// edge gets its own evenly-spaced exit point, sorted by target position,
-// so no two lines can ever overlap at the source.
-const EXIT_STEP = 22;
-
 // Generates N branch anchor points evenly spaced in a ring around the hub,
 // starting at the top and going clockwise — so adding a new skill in Sanity
 // always gets its own dedicated branch instead of being capped or having to
@@ -112,143 +103,65 @@ function snap(v: number) {
   return Math.round(v / GRID) * GRID;
 }
 
-// Base distance of the innermost lane's elbow from the hub edge, and the
-// spacing between each further-out lane.
-const LANE_BASE = 16;
-const LANE_STEP = 14;
+// ─── Compute each node's own exit point on the hub's edge ────────────────────
+// Previous versions grouped nodes by which side of the hub they were on and
+// then fanned their exit points out along that edge — which meant a busy
+// side could run out of room and silently break. This version has no
+// grouping step at all: for every node, we draw a straight ray from the
+// hub's center through that node and find exactly where that ray crosses
+// the hub's rectangular boundary. That intersection point is the exit
+// point. Since every node sits at its own distinct angle from the center
+// (guaranteed by generateScatter), every node gets its own distinct exit
+// point — there is no shared pool of slots that can run out, so no node
+// can ever end up without a connector.
+type Side = "left" | "right" | "top" | "bottom";
 
-// ─── Compute a unique, non-overlapping exit point + lane per node ────────────
-// Groups nodes by which edge of the hub they naturally belong to (left,
-// right, top, bottom), then:
-//   1. Spreads their exit points evenly along that edge (ordered by target
-//      position), so every line starts from its own distinct point.
-//   2. Assigns each node its own "lane" — the distance its elbow sits from
-//      the hub edge — ordered by how far the node's target is from the
-//      hub's centerline. Nodes with a short trip get a tight, close-in
-//      elbow; nodes with a long trip (e.g. reaching a far top/bottom row)
-//      get pushed to an outer lane. This guarantees that even when two
-//      lines' vertical runs cover overlapping y-ranges, they sit at
-//      different x-coordinates and can never be drawn on top of each other.
-function computeExitPoints(
-  positions: { x: number; y: number }[],
-  cw: number,
-  ch: number
-) {
-  const cx = cw / 2;
-  const cy = ch / 2;
-  const { w: hubW, h: hubH } = hubDims(cw);
-  const hw = hubW / 2;
-  const hh = hubH / 2;
+function getExitPoint(
+  cx: number,
+  cy: number,
+  hw: number,
+  hh: number,
+  gx: number,
+  gy: number
+): { sx: number; sy: number; side: Side } {
+  const dx = gx - cx;
+  const dy = gy - cy;
 
-  type Side = "left" | "right" | "top" | "bottom";
-  const withSide = positions.map((p, i) => {
-    const gx = snap(p.x);
-    const gy = snap(p.y);
-    const dx = gx - cx;
-    const dy = gy - cy;
-    // Classify by angle from center — a node visually above the hub
-    // should exit through the top edge, regardless of hub aspect ratio.
-    const angle = Math.atan2(dy, dx); // -PI..PI
-    const a = Math.abs(angle);
-    let side: Side;
-    if (a <= Math.PI / 4) side = "right";
-    else if (a >= (3 * Math.PI) / 4) side = "left";
-    else if (angle < 0) side = "top";
-    else side = "bottom";
-    return { i, gx, gy, side };
-  });
+  if (dx === 0 && dy === 0) {
+    return { sx: cx + hw, sy: cy, side: "right" };
+  }
 
-  const groups: Record<Side, typeof withSide> = {
-    left: [],
-    right: [],
-    top: [],
-    bottom: [],
-  };
-  withSide.forEach((n) => groups[n.side].push(n));
+  // How far (as a multiple of the ray) we'd have to travel to hit the
+  // vertical edges (x = cx ± hw) vs the horizontal edges (y = cy ± hh).
+  // Whichever is reached first (smaller t) is the actual exit edge.
+  const tx = dx !== 0 ? hw / Math.abs(dx) : Infinity;
+  const ty = dy !== 0 ? hh / Math.abs(dy) : Infinity;
+  const t = Math.min(tx, ty);
 
-  const exitPoints: { sx: number; sy: number; lane: number; side: Side }[] =
-    new Array(positions.length);
+  const sx = cx + dx * t;
+  const sy = cy + dy * t;
+  const side: Side =
+    tx <= ty ? (dx >= 0 ? "right" : "left") : dy >= 0 ? "bottom" : "top";
 
-  (["left", "right"] as Side[]).forEach((side) => {
-    const arr = [...groups[side]].sort((a, b) => a.gy - b.gy);
-    const count = arr.length;
-    arr.forEach((n, idx) => {
-      const offset = (idx - (count - 1) / 2) * EXIT_STEP;
-      exitPoints[n.i] = {
-        sx: side === "left" ? cx - hw : cx + hw,
-        sy: cy + offset,
-        lane: 0,
-        side,
-      };
-    });
-
-    // Assign lanes by travel distance from the hub's centerline, so lines
-    // with overlapping y-ranges never share an elbow x-coordinate.
-    const byTravel = [...arr].sort(
-      (a, b) => Math.abs(a.gy - cy) - Math.abs(b.gy - cy)
-    );
-    byTravel.forEach((n, rank) => {
-      exitPoints[n.i].lane = rank;
-    });
-  });
-
-  (["top", "bottom"] as Side[]).forEach((side) => {
-    const arr = [...groups[side]].sort((a, b) => a.gx - b.gx);
-    const count = arr.length;
-    arr.forEach((n, idx) => {
-      const offset = (idx - (count - 1) / 2) * EXIT_STEP;
-      exitPoints[n.i] = {
-        sx: cx + offset,
-        sy: side === "top" ? cy - hh : cy + hh,
-        lane: 0,
-        side,
-      };
-    });
-
-    const byTravel = [...arr].sort(
-      (a, b) => Math.abs(a.gx - cx) - Math.abs(b.gx - cx)
-    );
-    byTravel.forEach((n, rank) => {
-      exitPoints[n.i].lane = rank;
-    });
-  });
-
-  return exitPoints;
+  return { sx, sy, side };
 }
 
 // ─── L-shaped connector path ──────────────────────────────────────────────────
-// `side` tells us which hub edge this line exits from, so we know whether
-// the elbow bends into a vertical run (left/right exits) or a horizontal
-// run (top/bottom exits). `lane` (from computeExitPoints) sets how far that
-// elbow sits from the hub — each node gets its own lane so no two lines'
-// straight runs ever land on the same coordinate.
+// One elbow bend from the node's own exit point (on the hub edge) straight
+// to the icon. No fan-out, no lanes — just a direct, always-present path.
 function buildPath(
   nx: number,
   ny: number,
-  exitPoint: { sx: number; sy: number; lane: number; side: "left" | "right" | "top" | "bottom" }
+  exitPoint: { sx: number; sy: number; side: Side }
 ) {
   const gx = snap(nx);
   const gy = snap(ny);
-  const { sx, sy, lane, side } = exitPoint;
-
-  const dx = gx - sx;
-  const dy = gy - sy;
-  const OFFSET = LANE_BASE + lane * LANE_STEP;
+  const { sx, sy, side } = exitPoint;
 
   if (side === "left" || side === "right") {
-    const elbowX = dx >= 0 ? sx + OFFSET : sx - OFFSET;
-    return {
-      d: `M ${sx} ${sy} L ${elbowX} ${sy} L ${elbowX} ${gy} L ${gx} ${gy}`,
-      sx,
-      sy,
-    };
+    return { d: `M ${sx} ${sy} L ${gx} ${sy} L ${gx} ${gy}`, sx, sy };
   } else {
-    const elbowY = dy >= 0 ? sy + OFFSET : sy - OFFSET;
-    return {
-      d: `M ${sx} ${sy} L ${sx} ${elbowY} L ${gx} ${elbowY} L ${gx} ${gy}`,
-      sx,
-      sy,
-    };
+    return { d: `M ${sx} ${sy} L ${sx} ${gy} L ${gx} ${gy}`, sx, sy };
   }
 }
 
@@ -273,7 +186,9 @@ function NeonLines({
   const hh = hubH / 2;
   const STUB = 32;
 
-  const exitPoints = computeExitPoints(positions, cw, ch);
+  const exitPoints = positions.map((p) =>
+    getExitPoint(cx, cy, hw, hh, snap(p.x), snap(p.y))
+  );
 
   return (
     <svg
@@ -283,7 +198,32 @@ function NeonLines({
       style={{ zIndex: 5 }}
     >
       <defs>
-        <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+        {/*
+          FIX: filterUnits="userSpaceOnUse" with a fixed region covering the
+          whole canvas.
+
+          Without this, the filter defaults to objectBoundingBox units, which
+          size the filter region as a PERCENTAGE OF EACH PATH'S OWN BOUNDING
+          BOX. Almost every connector line has some horizontal AND vertical
+          spread, so that works fine. But the branch that sits directly above
+          the hub's center has an exit point and a node position with the
+          exact same x-coordinate — a perfectly vertical line — which gives
+          it a bounding box with ZERO WIDTH. A percentage of a zero-width box
+          is still zero, so the filter region collapses and the browser
+          clips the entire glowing stroke, making that one line invisible.
+
+          Using userSpaceOnUse with fixed absolute coordinates removes the
+          dependency on each path's bounding box entirely, so every line -
+          including a perfectly straight vertical one - renders correctly.
+        */}
+        <filter
+          id="neon-glow"
+          filterUnits="userSpaceOnUse"
+          x={-20}
+          y={-20}
+          width={cw + 40}
+          height={ch + 40}
+        >
           <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
@@ -335,8 +275,8 @@ function NeonLines({
               >
                 <stop offset="0%" stopColor={color} stopOpacity="1" />
                 <stop offset="18%" stopColor={color} stopOpacity="1" />
-                <stop offset="45%" stopColor={color} stopOpacity="0.75" />
-                <stop offset="92%" stopColor={color} stopOpacity="0.2" />
+                <stop offset="50%" stopColor={color} stopOpacity="0.75" />
+                <stop offset="78%" stopColor={color} stopOpacity="0.35" />
                 <stop offset="100%" stopColor={color} stopOpacity="0" />
               </linearGradient>
               <linearGradient
@@ -521,39 +461,8 @@ function Hub({
               display: "flex",
               alignItems: "center",
               gap: 12,
-              whiteSpace: "nowrap",
             }}
           >
-            <div
-              className="relative flex items-center justify-center"
-              style={{ width: 10, height: 10 }}
-            >
-              <motion.div
-                animate={{ scale: [1, 1.9, 1], opacity: [0.6, 0, 0.6] }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                style={{
-                  position: "absolute",
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  backgroundColor: color,
-                  opacity: 0.35,
-                }}
-              />
-              <div
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  backgroundColor: color,
-                  boxShadow: `0 0 10px ${color}88`,
-                }}
-              />
-            </div>
             <span
               style={{
                 fontFamily: "var(--font-instrument-serif), serif",
