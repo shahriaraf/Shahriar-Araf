@@ -487,7 +487,10 @@ export default function Banner() {
         }
 
         @media(max-width:768px){
-          .left-social,.right-indicator{display:none!important;}
+          /* Scroll indicator stays hidden — it's decorative, not a
+             social link, and has nowhere sensible to sit on mobile. */
+          .right-indicator{display:none!important;}
+
           .hero-content{padding:20px 20px 20px 20px!important;text-align:center; align-items:center; max-width:100% !important;}
           /* Let the photo cover the full width behind the centered text on
              mobile (it was still 60%-wide from desktop, which pushed the
@@ -527,6 +530,29 @@ export default function Banner() {
             gap: 8px !important;
             justify-content: center !important;
           }
+
+          /* Social icons: instead of hiding them, drop the vertical
+             side-rail (it would collide with the centered hero text) and
+             turn it into a compact horizontal row pinned to the bottom
+             of the viewport, above the CTA row's natural resting point. */
+          .left-social{
+            left: 50% !important;
+            top: auto !important;
+            bottom: 16px !important;
+            transform: translateX(-50%) !important;
+            flex-direction: row !important;
+            gap: 10px !important;
+            z-index: 30 !important;
+          }
+          .left-social::before, .left-social::after{
+            display: none !important;
+          }
+          .left-social .social-btn{
+            width: 36px !important;
+            height: 36px !important;
+            background: ${C.bg}cc !important;
+            backdrop-filter: blur(6px);
+          }
         }
       `}</style>
 
@@ -557,7 +583,7 @@ export default function Banner() {
         }}
       >
         {SOCIALS.map((s) => (
-          <a
+          
             key={s.label}
             href={s.href}
             target="_blank"
@@ -849,7 +875,7 @@ export default function Banner() {
               <polyline points="12 5 19 12 12 19" />
             </svg>
           </a>
-          <a
+          
             href="/assets/Araf-Full-Stack-Resume.pdf"
             download
             className="cta-secondary"
