@@ -490,67 +490,58 @@ export default function Banner() {
             width: 54% !important;
           }
         }
+          @media(max-width:768px){
+  .left-social,.right-indicator{display:none!important;}
 
-        @media(max-width:768px){
-          /* On mobile the fixed side rail doesn't fit the centered
-             layout, so it's hidden in favor of .mobile-social, which
-             sits inline right after the CTA row instead. */
-          .left-social,.right-indicator{display:none!important;}
+  .hero-content{
+    padding: 20px 20px 30px 20px !important;
+    text-align: center;
+    align-items: center;
+    max-width: 100% !important;
+    justify-content: flex-end !important;  /* ← push content to bottom */
+    flex-grow: 1;
+  }
+  
+  .photo-container{width:100%!important; opacity:0.95!important;}
 
-          .hero-content{padding:20px 20px 20px 20px!important;text-align:center; align-items:center; max-width:100% !important;}
-          /* Let the photo cover the full width behind the centered text on
-             mobile (it was still 60%-wide from desktop, which pushed the
-             photo off-center) and raise its visibility so the face reads
-             clearly, since it's now a full-bleed background behind
-             centered text rather than a side-by-side split. */
-          .photo-container{width:100%!important; opacity:0.9!important;}
+  /* Change gradient: fade from bottom up, so top (face) stays visible */
+  .photo-gradient-left{
+    background: linear-gradient(
+      to top,
+      ${C.bg} 0%,
+      ${C.bg} 25%,
+      ${C.bg}dd 40%,
+      ${C.bg}66 60%,
+      transparent 85%
+    ) !important;
+  }
 
-          /* The left-right fade made sense for desktop's side-by-side
-             layout but hid too much of the face once the photo goes
-             full-width. Switch it to a top fade instead, so the nav/name
-             area stays legible while the face stays visible lower down. */
-          .photo-gradient-left{
-            background: linear-gradient(
-              to bottom,
-              ${C.bg} 0%,
-              ${C.bg}cc 12%,
-              ${C.bg}55 30%,
-              transparent 55%
-            ) !important;
-          }
+  .hero-nav{padding:16px 20px!important;}
 
-          .hero-nav{padding:16px 20px!important;}
+  .cta-row{
+    flex-wrap: nowrap !important;
+    gap: 10px !important;
+    width: 100%;
+  }
+  .cta-primary, .cta-secondary{
+    flex: 1 1 0 !important;
+    padding: 14px 16px !important;
+    font-size: 10.5px !important;
+    gap: 8px !important;
+    justify-content: center !important;
+  }
 
-          /* CTA row: force a single row on mobile instead of wrapping to
-             two lines. Buttons share the row evenly via flex:1 so they
-             stay side-by-side at any mobile width. */
-          .cta-row{
-            flex-wrap: nowrap !important;
-            gap: 10px !important;
-            width: 100%;
-          }
-          .cta-primary, .cta-secondary{
-            flex: 1 1 0 !important;
-            padding: 14px 16px !important;
-            font-size: 10.5px !important;
-            gap: 8px !important;
-            justify-content: center !important;
-          }
-
-          /* Social icons, positioned in normal flow directly under the
-             CTA row so they sit close beneath the buttons rather than
-             floating at the bottom of the viewport. */
-          .mobile-social{
-            display:flex;
-            justify-content:center;
-            gap:10px;
-            margin-top:14px;
-          }
-          .mobile-social .social-btn{
-            width:36px;
-            height:36px;
-          }
-        }
+  .mobile-social{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-top:14px;
+  }
+  .mobile-social .social-btn{
+    width:36px;
+    height:36px;
+  }
+}
       `}</style>
 
       {/* ── Right scroll indicator ── */}
