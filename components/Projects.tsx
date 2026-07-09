@@ -183,7 +183,7 @@ function DetailsPanel({ project, index, total }: { project: Project; index: numb
   const liveLink = "liveLink" in project ? project.liveLink : null;
   const apkLink = "apkLink" in project ? project.apkLink : null;
   const githubLink = project.githubLink ?? null;
-  const tags = (project.technologies ?? []).slice(0, 5);
+  const tags = project.technologies ?? [];
 
   return (
     <div
@@ -255,9 +255,9 @@ function DetailsPanel({ project, index, total }: { project: Project; index: numb
           regardless of how much content lives inside.
         */}
         <div
-          className="mb-3 overflow-y-auto pr-1 project-description-scroll"
+          data-lenis-prevent
+          className="mb-3 flex-1 min-h-0 overflow-y-auto pr-1 project-description-scroll"
           style={{
-            maxHeight: "clamp(140px, 24vh, 280px)",
             scrollbarWidth: "thin",
             scrollbarColor: `${C.borderStrong} transparent`,
           }}
@@ -285,18 +285,18 @@ function DetailsPanel({ project, index, total }: { project: Project; index: numb
           )}
         </div>
 
-        <div className="flex flex-wrap gap-1 shrink-0">
+        <div className="flex flex-wrap gap-1 shrink-0 max-h-12 overflow-y-auto pr-1" data-lenis-prevent>
           {tags.map((tag) => (
             <span
               key={tag}
-              className="px-2 py-0.5 text-[9px] rounded-sm"
+              className="px-1.5 py-[1px] text-[8px] rounded-sm leading-tight"
               style={{
                 backgroundColor: C.surface,
                 color: C.text,
                 border: `1px solid ${C.border}`,
                 fontFamily: "var(--font-jetbrains-mono), monospace",
                 fontWeight: 500,
-                letterSpacing: ".08em",
+                letterSpacing: ".06em",
               }}
             >
               {tag}
@@ -541,6 +541,17 @@ function StackedCardsSection({ projects, headerHeight }: { projects: Project[]; 
         if (!card || i === total - 1) return;
         const direction = i % 2 === 0 ? -1 : 1;
 
+        // NOTE: ScrollTrigger's "%" in start/end is a percentage of the
+        // TRIGGER ELEMENT'S OWN HEIGHT — not one viewport. sectionRef's
+        // height is `total * 100vh` (SectionStack's heightVh), so
+        // `top+=100%` means "100% of the whole multi-card section" i.e.
+        // the very end of the scrollable range, not "one card's worth of
+        // scroll". That's why only the first swap ever looked right and
+        // everything after it collapsed into the last few pixels of
+        // scroll, spilling into the next section. Fix: express start/end
+        // as a fraction of the TOTAL section height (i/total, (i+1)/total)
+        // so each card gets an equal, correct slice no matter how many
+        // projects there are.
         gsap.fromTo(
           card,
           { x: 0, rotate: 0, opacity: 1 },
@@ -551,8 +562,8 @@ function StackedCardsSection({ projects, headerHeight }: { projects: Project[]; 
             ease: "power2.inOut",
             scrollTrigger: {
               trigger: sectionRef.current,
-              start: `top+=${i * 100}% top`,
-              end: `top+=${(i + 1) * 100}% top`,
+              start: `top+=${(i / total) * 100}% top`,
+              end: `top+=${((i + 1) / total) * 100}% top`,
               scrub: 1.2,
             },
           }
