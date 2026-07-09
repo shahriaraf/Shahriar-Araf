@@ -87,7 +87,7 @@ function generateScatter(count: number): { col: number; row: number }[] {
 //    giving the whole diagram vertical breathing room on tall mobile viewports.
 const MOBILE_BREAKPOINT = 640;
 const MOBILE_SCALE_X = 0.78;
-const MOBILE_SCALE_Y = 1.35;
+const MOBILE_SCALE_Y = 0.65;
 
 function getScatterForViewport(
   scatter: { col: number; row: number }[],
