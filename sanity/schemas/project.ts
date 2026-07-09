@@ -27,8 +27,29 @@ export const projectSchema = defineType({
     defineField({
       name: 'description',
       title: 'Description',
-      type: 'text',
-      rows: 3,
+      type: 'array',
+      of: [
+        {
+          type: 'block',
+          // Only allow the styles you actually want editors to use.
+          styles: [
+            { title: 'Paragraph', value: 'normal' },
+            { title: 'Heading', value: 'h4' },
+          ],
+          lists: [
+            { title: 'Bullet', value: 'bullet' },
+            { title: 'Numbered', value: 'number' },
+          ],
+          marks: {
+            decorators: [
+              { title: 'Bold', value: 'strong' },
+              { title: 'Italic', value: 'em' },
+              { title: 'Code', value: 'code' },
+            ],
+            annotations: [],
+          },
+        },
+      ],
       validation: (Rule) => Rule.required(),
     }),
     defineField({

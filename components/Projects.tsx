@@ -6,6 +6,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
 import { FaGithub, FaAndroid } from "react-icons/fa";
+import { PortableText, PortableTextComponents } from "@portabletext/react";
 import type { WebProject, AppProject, Project } from "@/sanity/queries";
 import { urlFor } from "@/sanity/client";
 
@@ -43,6 +44,137 @@ const C = {
   muted:         "#8a8578",
   text:          "#e5e0d4",
   emphasis:      "#f4f0e8",
+};
+
+// ─── Portable Text renderer — matches the luxury monochrome palette ──────────
+// Bold jumps to the cream 'emphasis' color so key phrases catch the eye,
+// headings render as small uppercase mono labels (matching "SELECTED WORK" /
+// "MY ARSENAL" style), and bullets use a minimalist horizontal dash instead
+// of a fat dot — keeps the editorial dark-luxury feel intact.
+const portableComponents: PortableTextComponents = {
+  block: {
+    normal: ({ children }) => (
+      <p
+        style={{
+          color: C.muted,
+          fontSize: "12px",
+          lineHeight: 1.65,
+          letterSpacing: "-0.005em",
+          margin: "0 0 8px 0",
+          fontFamily: "var(--font-inter), sans-serif",
+        }}
+      >
+        {children}
+      </p>
+    ),
+    h4: ({ children }) => (
+      <h4
+        style={{
+          fontFamily: "var(--font-jetbrains-mono), monospace",
+          color: C.emphasis,
+          fontSize: "10px",
+          fontWeight: 600,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          margin: "12px 0 6px 0",
+        }}
+      >
+        {children}
+      </h4>
+    ),
+  },
+  list: {
+    bullet: ({ children }) => (
+      <ul
+        style={{
+          margin: "4px 0 8px 0",
+          padding: 0,
+          listStyle: "none",
+        }}
+      >
+        {children}
+      </ul>
+    ),
+    number: ({ children }) => (
+      <ol
+        style={{
+          margin: "4px 0 8px 0",
+          paddingLeft: "18px",
+          color: C.muted,
+          fontSize: "12px",
+          lineHeight: 1.6,
+          fontFamily: "var(--font-inter), sans-serif",
+        }}
+      >
+        {children}
+      </ol>
+    ),
+  },
+  listItem: {
+    bullet: ({ children }) => (
+      <li
+        style={{
+          color: C.muted,
+          fontSize: "12px",
+          lineHeight: 1.6,
+          margin: "3px 0",
+          paddingLeft: "14px",
+          position: "relative",
+          fontFamily: "var(--font-inter), sans-serif",
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            left: 0,
+            top: "0.68em",
+            width: 6,
+            height: 1,
+            backgroundColor: C.borderStrong,
+          }}
+        />
+        {children}
+      </li>
+    ),
+    number: ({ children }) => (
+      <li
+        style={{
+          color: C.muted,
+          fontSize: "12px",
+          lineHeight: 1.6,
+          margin: "3px 0",
+          fontFamily: "var(--font-inter), sans-serif",
+        }}
+      >
+        {children}
+      </li>
+    ),
+  },
+  marks: {
+    strong: ({ children }) => (
+      <strong style={{ color: C.emphasis, fontWeight: 600 }}>
+        {children}
+      </strong>
+    ),
+    em: ({ children }) => (
+      <em style={{ color: C.text, fontStyle: "italic" }}>{children}</em>
+    ),
+    code: ({ children }) => (
+      <code
+        style={{
+          fontFamily: "var(--font-jetbrains-mono), monospace",
+          fontSize: "10.5px",
+          padding: "1px 5px",
+          borderRadius: 2,
+          backgroundColor: C.surface,
+          color: C.emphasis,
+          border: `1px solid ${C.border}`,
+        }}
+      >
+        {children}
+      </code>
+    ),
+  },
 };
 
 // ─── Details Panel ────────────────────────────────────────────────────────────
@@ -115,16 +247,43 @@ function DetailsPanel({ project, index, total }: { project: Project; index: numb
           {project.name}
         </h3>
 
-        <p
-          className="text-[11px] md:text-xs leading-relaxed mb-3 overflow-hidden"
+        {/*
+          Rich-text description — renders Portable Text from Sanity so editors
+          can add bold, headings, and lists that actually catch the eye
+          (instead of a plain flat wall of text). Scrolls internally when
+          content is long so the CTA stays anchored at the bottom of the card
+          regardless of how much content lives inside.
+        */}
+        <div
+          className="mb-3 overflow-y-auto pr-1 project-description-scroll"
           style={{
-            color: C.muted,
-            fontFamily: "var(--font-inter), sans-serif",
-            letterSpacing: "-0.005em",
+            maxHeight: "clamp(140px, 24vh, 280px)",
+            scrollbarWidth: "thin",
+            scrollbarColor: `${C.borderStrong} transparent`,
           }}
         >
-          {project.description}
-        </p>
+          {Array.isArray(project.description) ? (
+            <PortableText
+              value={project.description}
+              components={portableComponents}
+            />
+          ) : (
+            // Graceful fallback for any legacy plain-string descriptions
+            // still sitting in Sanity before the schema migration.
+            <p
+              style={{
+                color: C.muted,
+                fontSize: "12px",
+                lineHeight: 1.65,
+                letterSpacing: "-0.005em",
+                margin: 0,
+                fontFamily: "var(--font-inter), sans-serif",
+              }}
+            >
+              {String(project.description ?? "")}
+            </p>
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-1 shrink-0">
           {tags.map((tag) => (
@@ -173,6 +332,20 @@ function DetailsPanel({ project, index, total }: { project: Project; index: numb
           </a>
         )}
       </div>
+
+      {/* Custom webkit scrollbar for description overflow */}
+      <style jsx>{`
+        .project-description-scroll::-webkit-scrollbar {
+          width: 3px;
+        }
+        .project-description-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .project-description-scroll::-webkit-scrollbar-thumb {
+          background: ${C.borderStrong};
+          border-radius: 2px;
+        }
+      `}</style>
     </div>
   );
 }

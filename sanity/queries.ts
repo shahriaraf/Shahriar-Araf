@@ -1,3 +1,4 @@
+import { PortableTextBlock } from 'sanity';
 import { client } from './client'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -11,7 +12,7 @@ export type WebProject = {
   _id: string
   name: string
   category: 'web'
-  description: string
+  description: PortableTextBlock[]; // ← was string
   image: SanityImageRef
   technologies: string[]
   liveLink: string
