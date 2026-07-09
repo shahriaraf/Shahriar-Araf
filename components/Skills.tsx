@@ -81,12 +81,13 @@ function generateScatter(count: number): { col: number; row: number }[] {
   });
 }
 
-// On narrow screens the branches are pulled proportionally closer to the
-// hub (rather than singling out one specific row like the old fixed
-// 10-point layout did), so any number of generated branch points stays
-// within the canvas instead of running off-screen.
+// Independent axes on mobile:
+//  - X gets pulled IN a bit so icons don't run off the narrow canvas width.
+//  - Y gets pushed OUT so the top row lifts up and the bottom row drops down,
+//    giving the whole diagram vertical breathing room on tall mobile viewports.
 const MOBILE_BREAKPOINT = 640;
-const MOBILE_RADIUS_SCALE = 0.72;
+const MOBILE_SCALE_X = 0.78;
+const MOBILE_SCALE_Y = 1.35;
 
 function getScatterForViewport(
   scatter: { col: number; row: number }[],
@@ -94,8 +95,8 @@ function getScatterForViewport(
 ) {
   if (!isMobile) return scatter;
   return scatter.map((cell) => ({
-    col: CENTER_COL + (cell.col - CENTER_COL) * MOBILE_RADIUS_SCALE,
-    row: CENTER_ROW + (cell.row - CENTER_ROW) * MOBILE_RADIUS_SCALE,
+    col: CENTER_COL + (cell.col - CENTER_COL) * MOBILE_SCALE_X,
+    row: CENTER_ROW + (cell.row - CENTER_ROW) * MOBILE_SCALE_Y,
   }));
 }
 
@@ -518,8 +519,11 @@ export default function Skills({ skills }: SkillsProps) {
     isMobile
   );
 
-  const PAD_X = 40;
-  const PAD_Y = 40;
+  // Padding scales down on mobile so the vertical scale-up above (icons
+  // pushed further from the hub on the Y axis) has actual room to expand
+  // into instead of getting clipped by generous desktop padding.
+  const PAD_X = isMobile ? 32 : 40;
+  const PAD_Y = isMobile ? 24 : 40;
   const usableW = Math.max(canvasSize.w - PAD_X * 2, 1);
   const usableH = Math.max(canvasSize.h - PAD_Y * 2, 1);
 
@@ -652,7 +656,7 @@ export default function Skills({ skills }: SkillsProps) {
         <div
           ref={containerRef}
           className="relative mx-auto max-w-5xl w-full"
-          style={{ height: "min(100%, 60vh)" }}
+          style={{ height: "min(100%, 75vh)" }}
         >
           <NeonLines
             positions={nodePositions}
