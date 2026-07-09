@@ -490,7 +490,7 @@ export default function Banner() {
             width: 54% !important;
           }
         }
-          @media(max-width:768px){
+        @media(max-width:768px){
   .left-social,.right-indicator{display:none!important;}
 
   .hero-content{
@@ -498,22 +498,15 @@ export default function Banner() {
     text-align: center;
     align-items: center;
     max-width: 100% !important;
-    justify-content: flex-end !important;  /* ← push content to bottom */
+    justify-content: flex-end !important;
     flex-grow: 1;
   }
   
-  .photo-container{width:100%!important; opacity:0.95!important;}
+  .photo-container{width:100%!important; opacity:1!important;}
 
-  /* Change gradient: fade from bottom up, so top (face) stays visible */
+  /* Fully transparent — no dark overlay at all */
   .photo-gradient-left{
-    background: linear-gradient(
-      to top,
-      ${C.bg} 0%,
-      ${C.bg} 25%,
-      ${C.bg}dd 40%,
-      ${C.bg}66 60%,
-      transparent 85%
-    ) !important;
+    background: transparent !important;
   }
 
   .hero-nav{padding:16px 20px!important;}
