@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { AnimatePresence, motion } from "framer-motion";
 import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
-import { FaGithub, FaAndroid } from "react-icons/fa";
+import { FaGithub, FaAndroid, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { PortableText, PortableTextComponents } from "@portabletext/react";
 import type { WebProject, AppProject, Project } from "@/sanity/queries";
 import { urlFor } from "@/sanity/client";
@@ -47,10 +46,6 @@ const C = {
 };
 
 // ─── Portable Text renderer — matches the luxury monochrome palette ──────────
-// Bold jumps to the cream 'emphasis' color so key phrases catch the eye,
-// headings render as small uppercase mono labels (matching "SELECTED WORK" /
-// "MY ARSENAL" style), and bullets use a minimalist horizontal dash instead
-// of a fat dot — keeps the editorial dark-luxury feel intact.
 const portableComponents: PortableTextComponents = {
   block: {
     normal: ({ children }) => (
@@ -232,7 +227,7 @@ function DetailsPanel({ project, index, total }: { project: Project; index: numb
           </div>
         </div>
 
-        {/* Project Name — Instrument Serif for editorial feel */}
+        {/* Project Name */}
         <h3
           className="leading-tight mb-2 shrink-0"
           style={{
@@ -247,13 +242,7 @@ function DetailsPanel({ project, index, total }: { project: Project; index: numb
           {project.name}
         </h3>
 
-        {/*
-          Rich-text description — renders Portable Text from Sanity so editors
-          can add bold, headings, and lists that actually catch the eye
-          (instead of a plain flat wall of text). Scrolls internally when
-          content is long so the CTA stays anchored at the bottom of the card
-          regardless of how much content lives inside.
-        */}
+        {/* Rich-text description */}
         <div
           data-lenis-prevent
           className="mb-3 flex-1 min-h-0 overflow-y-auto pr-1 project-description-scroll"
@@ -268,8 +257,6 @@ function DetailsPanel({ project, index, total }: { project: Project; index: numb
               components={portableComponents}
             />
           ) : (
-            // Graceful fallback for any legacy plain-string descriptions
-            // still sitting in Sanity before the schema migration.
             <p
               style={{
                 color: C.muted,
@@ -333,7 +320,6 @@ function DetailsPanel({ project, index, total }: { project: Project; index: numb
         )}
       </div>
 
-      {/* Custom webkit scrollbar for description overflow */}
       <style jsx>{`
         .project-description-scroll::-webkit-scrollbar {
           width: 3px;
@@ -429,11 +415,6 @@ function ProjectCard({ project, index, total }: { project: Project; index: numbe
       />
 
       <style jsx>{`
-        /* Below lg, the fixed side-by-side "1fr 1px 1fr" grid squeezed the
-           image and text into two unreadably narrow columns on tablets and
-           phones. Below lg we stack image on top, details below, and let
-           the details panel scroll internally if content is long — large
-           screens are completely untouched. */
         .project-grid {
           display: flex;
           flex-direction: column;
@@ -499,80 +480,32 @@ function ProjectCard({ project, index, total }: { project: Project; index: numbe
           </>
         )}
       </div>
-
-      {/* Scroll hint on first card */}
-      {index === 0 && (
-        <div
-          className="absolute bottom-2 left-1/2 -translate-x-1/2 z-40 flex flex-col items-center gap-1 pointer-events-none"
-          style={{ opacity: 0.5 }}
-        >
-          <span
-            className="text-[8px] tracking-widest uppercase"
-            style={{
-              color: C.muted,
-              fontFamily: "var(--font-jetbrains-mono), monospace",
-              letterSpacing: ".18em",
-            }}
-          >
-            Scroll to flip
-          </span>
-          <div
-            className="w-px h-4 animate-bounce"
-            style={{ background: `linear-gradient(to bottom, ${C.muted}, transparent)` }}
-          />
-        </div>
-      )}
     </div>
   );
 }
 
-// ─── Stacked Cards using CSS sticky + ScrollTrigger ───────────────────────────
-function StackedCardsSection({ projects, headerHeight }: { projects: Project[]; headerHeight: number }) {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+// ─── Simple Carousel (auto-advances every 3s, plus side buttons OUTSIDE card)
+function CarouselSection({ projects, headerHeight }: { projects: Project[]; headerHeight: number }) {
+  const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [paused, setPaused] = useState(false);
+  const total = projects.length;
+
+  const goTo = (nextIndex: number, dir: number) => {
+    setDirection(dir);
+    setIndex(((nextIndex % total) + total) % total);
+  };
+  const next = () => goTo(index + 1, 1);
+  const prev = () => goTo(index - 1, -1);
 
   useEffect(() => {
-    if (!sectionRef.current) return;
-    gsap.registerPlugin(ScrollTrigger);
-    const total = projects.length;
-
-    const ctx = gsap.context(() => {
-      cardsRef.current.forEach((card, i) => {
-        if (!card || i === total - 1) return;
-        const direction = i % 2 === 0 ? -1 : 1;
-
-        // NOTE: ScrollTrigger's "%" in start/end is a percentage of the
-        // TRIGGER ELEMENT'S OWN HEIGHT — not one viewport. sectionRef's
-        // height is `total * 100vh` (SectionStack's heightVh), so
-        // `top+=100%` means "100% of the whole multi-card section" i.e.
-        // the very end of the scrollable range, not "one card's worth of
-        // scroll". That's why only the first swap ever looked right and
-        // everything after it collapsed into the last few pixels of
-        // scroll, spilling into the next section. Fix: express start/end
-        // as a fraction of the TOTAL section height (i/total, (i+1)/total)
-        // so each card gets an equal, correct slice no matter how many
-        // projects there are.
-        gsap.fromTo(
-          card,
-          { x: 0, rotate: 0, opacity: 1 },
-          {
-            x: `${direction * 115}%`,
-            rotate: direction * (8 + Math.random() * 6),
-            opacity: 0,
-            ease: "power2.inOut",
-            scrollTrigger: {
-              trigger: sectionRef.current,
-              start: `top+=${(i / total) * 100}% top`,
-              end: `top+=${((i + 1) / total) * 100}% top`,
-              scrub: 1.2,
-            },
-          }
-        );
-      });
-    }, sectionRef);
-
-    return () => ctx.revert();
-  }, [projects]);
+    if (total <= 1 || paused) return;
+    const id = setInterval(() => {
+      setDirection(1);
+      setIndex((i) => (i + 1) % total);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [total, paused, index]);
 
   if (projects.length === 0) {
     return (
@@ -593,16 +526,48 @@ function StackedCardsSection({ projects, headerHeight }: { projects: Project[]; 
     );
   }
 
+  const project = projects[index];
+
   return (
-    <div ref={sectionRef} className="relative h-full">
-      <div
-        className="sticky flex items-center justify-center overflow-hidden px-4 md:px-6"
-        style={{
-          top: `${headerHeight}px`,
-          height: `calc(100vh - ${headerHeight}px)`,
-        }}
-      >
-        {/* Reduced card container — smaller max-width, tighter height, capped smaller */}
+    <div
+      className="sticky flex items-center justify-center overflow-hidden px-4 md:px-6"
+      style={{
+        top: `${headerHeight}px`,
+        height: `calc(100vh - ${headerHeight}px)`,
+      }}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      {/*
+        Outer wrapper that holds buttons + card side by side.
+        The buttons sit OUTSIDE the card container on each side.
+      */}
+      <div className="flex items-center gap-3 md:gap-5 w-full max-w-6xl justify-center">
+        {/* ← Left arrow button — outside the card */}
+        {total > 1 && (
+          <button
+            onClick={prev}
+            aria-label="Previous project"
+            className="shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-200 hover:scale-110"
+            style={{
+              backgroundColor: `${C.surface}`,
+              border: `1px solid ${C.borderStrong}`,
+              color: C.text,
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = C.emphasis;
+              (e.currentTarget as HTMLButtonElement).style.borderColor = C.muted;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = C.text;
+              (e.currentTarget as HTMLButtonElement).style.borderColor = C.borderStrong;
+            }}
+          >
+            <FaChevronLeft size={12} />
+          </button>
+        )}
+
+        {/* Card container */}
         <div
           className="relative w-full max-w-5xl"
           style={{
@@ -632,17 +597,44 @@ function StackedCardsSection({ projects, headerHeight }: { projects: Project[]; 
             }}
           />
 
-          {projects.map((project, i) => (
-            <div
+          <AnimatePresence initial={false} mode="popLayout">
+            <motion.div
               key={project._id}
-              ref={(el) => { cardsRef.current[i] = el; }}
               className="absolute inset-0"
-              style={{ zIndex: projects.length - i }}
+              style={{ zIndex: 1 }}
+              initial={{ x: direction > 0 ? "12%" : "-12%", opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: direction > 0 ? "-12%" : "12%", opacity: 0 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             >
-              <ProjectCard project={project} index={i} total={projects.length} />
-            </div>
-          ))}
+              <ProjectCard project={project} index={index} total={total} />
+            </motion.div>
+          </AnimatePresence>
         </div>
+
+        {/* → Right arrow button — outside the card */}
+        {total > 1 && (
+          <button
+            onClick={next}
+            aria-label="Next project"
+            className="shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-200 hover:scale-110"
+            style={{
+              backgroundColor: `${C.surface}`,
+              border: `1px solid ${C.borderStrong}`,
+              color: C.text,
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = C.emphasis;
+              (e.currentTarget as HTMLButtonElement).style.borderColor = C.muted;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.color = C.text;
+              (e.currentTarget as HTMLButtonElement).style.borderColor = C.borderStrong;
+            }}
+          >
+            <FaChevronRight size={12} />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -691,15 +683,6 @@ export default function Projects({ webProjects, appProjects }: ProjectsProps) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (typeof window !== "undefined") {
-        ScrollTrigger.refresh();
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [activeTab]);
 
   const projects: Project[] = activeTab === "web" ? webProjects : appProjects;
 
@@ -783,7 +766,7 @@ export default function Projects({ webProjects, appProjects }: ProjectsProps) {
         </div>
       </div>
 
-      <StackedCardsSection key={activeTab} projects={projects} headerHeight={headerHeight} />
+      <CarouselSection key={activeTab} projects={projects} headerHeight={headerHeight} />
     </div>
   );
 }

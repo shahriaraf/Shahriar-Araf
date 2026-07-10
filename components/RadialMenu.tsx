@@ -43,8 +43,31 @@ export default function RadialMenu() {
     const element = document.getElementById(id);
     if (!element) return;
     const lenis = window.__lenis;
+
     if (lenis) {
-      lenis.scrollTo(element, { duration: 1.3 });
+      // Sections are GSAP-pinned with pinSpacing:false (see SectionStack),
+      // which pulls a panel out of document flow WHILE it's pinned —
+      // shifting every panel below it up by that panel's height until the
+      // pin releases. Asking Lenis to scroll to `element` directly reads
+      // getBoundingClientRect() at the instant of the click, which can be
+      // off by up to one panel's height if a pin happens to be mid-transition
+      // right then — landing on the wrong section, inconsistently.
+      // Fix: sum each preceding panel's intrinsic offsetHeight (unaffected
+      // by pin/unpin — it's the element's own box size, not its flow
+      // position) to get a stable absolute target regardless of which pin
+      // is currently active.
+      const container = element.parentElement;
+      let target: number;
+      if (container) {
+        target = 0;
+        for (const child of Array.from(container.children)) {
+          if (child === element) break;
+          target += (child as HTMLElement).offsetHeight;
+        }
+      } else {
+        target = element.getBoundingClientRect().top + window.scrollY;
+      }
+      lenis.scrollTo(target, { duration: 1.3 });
     } else {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -58,29 +81,53 @@ export default function RadialMenu() {
   // between sections unpredictably. Comparing viewport-center against each
   // section's real bounding box is reliable regardless of pinning.
   useEffect(() => {
-    const sections = navLinks
+    const rawSections = navLinks
       .map((l) => document.getElementById(l.id))
       .filter((el): el is HTMLElement => !!el);
+
+    // navLinks is in MENU DISPLAY order (reversed, for the fan layout) —
+    // not page order. During a pin transition, the incoming panel (later
+    // in real DOM order) sits at a HIGHER z-index and visually covers the
+    // outgoing one, even though the outgoing one's rect can still
+    // "technically" contain the viewport center while it's pinned. So we
+    // need the true top-to-bottom DOM order here, independent of however
+    // the menu happens to be arranged, and prefer whichever match comes
+    // LAST in that real order (i.e. whichever is actually on top).
+    const sections = [...rawSections].sort((a, b) => {
+      const pos = a.compareDocumentPosition(b);
+      if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+      if (pos & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+      return 0;
+    });
 
     const updateActive = () => {
       const centerY = window.innerHeight / 2;
       let current = sections[0];
-      let smallestDistance = Infinity;
+      let matched = false;
 
       for (const section of sections) {
         const rect = section.getBoundingClientRect();
         if (rect.top <= centerY && rect.bottom >= centerY) {
           current = section;
-          smallestDistance = 0;
-          break;
+          matched = true;
+          // no break — keep going so a later (higher z-index) section
+          // that also matches overrides an earlier one still pinned
+          // underneath it
         }
-        const distance = Math.min(
-          Math.abs(rect.top - centerY),
-          Math.abs(rect.bottom - centerY)
-        );
-        if (distance < smallestDistance) {
-          smallestDistance = distance;
-          current = section;
+      }
+
+      if (!matched) {
+        let smallestDistance = Infinity;
+        for (const section of sections) {
+          const rect = section.getBoundingClientRect();
+          const distance = Math.min(
+            Math.abs(rect.top - centerY),
+            Math.abs(rect.bottom - centerY)
+          );
+          if (distance < smallestDistance) {
+            smallestDistance = distance;
+            current = section;
+          }
         }
       }
 
