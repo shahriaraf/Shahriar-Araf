@@ -17,10 +17,6 @@ export default async function Home() {
     getAbout(),
   ]);
 
-  // Projects panel needs to be N viewports tall so cards can flip on scroll.
-  // 1 viewport per project (minimum 1).
-  const maxProjects  = Math.max(webProjects.length || 1, appProjects.length || 1, 1);
-  const projectsVh   = Math.max(1, maxProjects); // e.g. 3 projects → 3 viewports tall
 
   const panels: PanelConfig[] = [
     {
@@ -42,7 +38,6 @@ export default async function Home() {
       id       : "projects",
       element  : <Projects webProjects={webProjects} appProjects={appProjects} />,
       bgColor  : "#151515",
-      heightVh : projectsVh,   // ← tall panel, opts out of pinning
     },
     {
       id      : "contact",
