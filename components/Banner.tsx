@@ -300,28 +300,38 @@ export default function Banner() {
         color: C.text,
       }}
     >
+      {/* Preload hint for the hero photo — belt-and-suspenders alongside
+          the priority <Image> below, so the LCP request is guaranteed to
+          be discoverable in the initial HTML at the highest fetch priority. */}
+      <link
+        rel="preload"
+        as="image"
+        href={headshot.src}
+        fetchPriority="high"
+      />
+
       <style>{`
         .photo-container {
           position: relative;
           overflow: hidden;
         }
 
-        /* ── HOLOGRAM GLITCH LAYERS — fixed for PNG images ── */
+        /* ── HOLOGRAM GLITCH LAYERS ──
+           No background-image here anymore — each layer now renders its
+           own <Image> (same src/quality/sizes as the base photo) so the
+           browser reuses the SAME cached network request instead of
+           firing a second, undiscoverable fetch for the raw file. */
         .glitch-layer {
           position: absolute;
           top: 0; left: 0;
           width: 100%; height: 100%;
-          background-image: url("${headshot.src}");
-          background-repeat: no-repeat;
-          background-position: center 30%;
-          background-size: cover;
           opacity: 0;
           pointer-events: none;
           z-index: 15;
           padding: 0; margin: 0;
           will-change: transform, clip-path, opacity;
           transition: none;
-          image-rendering: -webkit-optimize-contrast;
+          overflow: hidden;
         }
         .glitch-layer.light {
           filter: grayscale(1) contrast(1.6) brightness(1.5);
@@ -554,7 +564,7 @@ export default function Banner() {
         }}
       >
         {SOCIALS.map((s) => (
-          <a
+          
             key={s.label}
             href={s.href}
             target="_blank"
@@ -629,12 +639,15 @@ export default function Banner() {
             overflow: "hidden",
           }}
         >
-          {/* Base image — natural tone */}
+          {/* Base image — natural tone. This is the true LCP element:
+              priority + fetchPriority make it discoverable and
+              high-priority right in the initial HTML. */}
           <Image
             src={headshot}
             alt="Shahriar Araf"
             fill
             priority
+            fetchPriority="high"
             quality={90}
             sizes="(max-width: 768px) 100vw, 75vw"
             style={{
@@ -649,9 +662,41 @@ export default function Banner() {
             }}
           />
 
-          {/* Glitch layers — monochrome hologram effect */}
-          <div ref={cyanRef} className="glitch-layer light" />
-          <div ref={redRef} className="glitch-layer ghost" />
+          {/* Glitch layers — monochrome hologram effect.
+              Each layer reuses the SAME optimized image request as the
+              base photo above (identical src/quality/sizes ⇒ identical
+              generated URL ⇒ served from cache, no second network
+              fetch, nothing left "undiscoverable" for LCP purposes). */}
+          <div ref={cyanRef} className="glitch-layer light">
+            <Image
+              src={headshot}
+              alt=""
+              aria-hidden="true"
+              fill
+              quality={90}
+              sizes="(max-width: 768px) 100vw, 75vw"
+              loading="eager"
+              style={{
+                objectFit: "cover",
+                objectPosition: "center 30%",
+              }}
+            />
+          </div>
+          <div ref={redRef} className="glitch-layer ghost">
+            <Image
+              src={headshot}
+              alt=""
+              aria-hidden="true"
+              fill
+              quality={90}
+              sizes="(max-width: 768px) 100vw, 75vw"
+              loading="eager"
+              style={{
+                objectFit: "cover",
+                objectPosition: "center 30%",
+              }}
+            />
+          </div>
 
           {/* Film grain overlay */}
           <div
@@ -846,7 +891,7 @@ export default function Banner() {
               <polyline points="12 5 19 12 12 19" />
             </svg>
           </a>
-          <a
+          
             href="/assets/Araf-Full-Stack-Resume.pdf"
             download
             className="cta-secondary"
@@ -873,7 +918,7 @@ export default function Banner() {
         {/* Mobile-only social row — sits directly under the CTAs */}
         <div className="mobile-social">
           {SOCIALS.map((s) => (
-            <a
+            
               key={s.label}
               href={s.href}
               target="_blank"
