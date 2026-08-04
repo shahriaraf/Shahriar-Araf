@@ -342,7 +342,7 @@ function ImagePanel({ project, index, imageRight }: { project: Project; index: n
           alt={project.name}
           fill
           className="object-cover"
-          sizes="(max-width: 768px) 100vw, 50vw"
+          sizes="(max-width: 768px) 85vw, 50vw"
         />
       ) : (
         <div
