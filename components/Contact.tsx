@@ -2,27 +2,11 @@
 
 import React, { useRef, useState } from "react";
 import Image from "next/image";
-import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
 import { FaFacebookF, FaLinkedinIn, FaGithub, FaWhatsapp, FaEnvelope } from "react-icons/fa";
 import emailjs from "@emailjs/browser";
-
-// ─── Premium Typography Stack ─────────────────────────────────────────────────
-const instrumentSerif = Instrument_Serif({
-  weight: "400",
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  variable: "--font-instrument-serif",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-});
+// Instrument Serif / Inter / JetBrains Mono are loaded once in app/fonts.ts
+// and applied at the root layout — their CSS variables are already
+// available here via inheritance, so no local font import is needed.
 
 // ─── Warm Monochrome Palette (Dark Luxury) ────────────────────────────────────
 const C = {
@@ -63,7 +47,7 @@ export default function Contact() {
 
   return (
     <section
-      className={`${instrumentSerif.variable} ${inter.variable} ${jetbrainsMono.variable} h-screen w-full flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-hidden`}
+      className="h-screen w-full flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-hidden"
       style={{
         backgroundColor: C.bg,
         fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif",
