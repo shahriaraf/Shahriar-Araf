@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+import { instrumentSerif, inter, jetbrainsMono } from "./fonts";
 
 export const metadata: Metadata = {
   title: "Shahriar Araf | Full Stack Developer",
@@ -19,7 +17,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans bg-black text-white antialiased`}>
+      <body
+        className={`${inter.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable} font-sans bg-black text-white antialiased`}
+      >
         <AppShell>{children}</AppShell>
       </body>
     </html>
