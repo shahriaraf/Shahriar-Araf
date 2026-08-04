@@ -102,7 +102,9 @@ export default function About({ about }: AboutProps) {
           border-radius: 2px;
           overflow: hidden;
           cursor: pointer;
-          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+          transition: color 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+                      transform 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+                      box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1);
         }
         .cv-button::before {
           content: "";
@@ -151,7 +153,9 @@ export default function About({ about }: AboutProps) {
           border-radius: 2px;
           overflow: hidden;
           cursor: pointer;
-          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+          transition: color 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+                      border-color 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+                      transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
         }
         .hire-button::before {
           content: "";
@@ -367,7 +371,7 @@ export default function About({ about }: AboutProps) {
                   className="text-sm sm:text-base mb-1 sm:mb-1.5"
                   style={{ color: C.muted }}
                 />
-                <h4
+                <p
                   style={{
                     fontFamily: "var(--font-instrument-serif), serif",
                     fontSize: "clamp(18px, 2.2vw, 26px)",
@@ -379,7 +383,7 @@ export default function About({ about }: AboutProps) {
                   }}
                 >
                   {stat.value}
-                </h4>
+                </p>
                 <span
                   className="text-[7px] sm:text-[9px] uppercase leading-tight mt-1"
                   style={{
