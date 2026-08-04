@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { gsap } from "gsap";
 import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
-import headshot from "../public/araf-headshot.webp";
+import headshot from "../public/araf-headshot (2).webp";
 
 // ─── Premium Typography Stack ─────────────────────────────────────────────────
 const instrumentSerif = Instrument_Serif({
