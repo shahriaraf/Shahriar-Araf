@@ -1,11 +1,21 @@
-import About from "@/components/About";
+import dynamic from "next/dynamic";
 import Banner from "@/components/Banner";
-import Contact from "@/components/Contact";
-import Projects from "@/components/Projects";
-import Skills from "@/components/Skills";
 import RadialMenu from "@/components/RadialMenu";
 import { SectionStack, type PanelConfig } from "@/components/SectionStack";
 import { getWebProjects, getAppProjects, getSkills, getAbout } from "@/sanity/queries";
+
+// Banner is the LCP element and stays a static import so it's ready
+// immediately. Everything below the fold is dynamically imported so its
+// JS (framer-motion variants, @portabletext/react, the Sanity image-url
+// builder, emailjs) ships as separate chunks fetched after the critical
+// path instead of being parsed/executed up front on every load — that's
+// what was showing up as "unused JavaScript" in the initial-load audit.
+// ssr stays on (the default) so content, layout, and SEO are unaffected;
+// only the client JS is deferred.
+const About = dynamic(() => import("@/components/About"));
+const Skills = dynamic(() => import("@/components/Skills"));
+const Projects = dynamic(() => import("@/components/Projects"));
+const Contact = dynamic(() => import("@/components/Contact"));
 
 export const revalidate = 60;
 
