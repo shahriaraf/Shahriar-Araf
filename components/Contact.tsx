@@ -79,7 +79,7 @@ export default function Contact() {
           font-family: var(--font-inter), sans-serif;
           font-size: 13px;
           border-radius: 2px;
-          transition: all 0.3s ease;
+          transition: border-color 0.3s ease, background-color 0.3s ease;
           letter-spacing: -0.005em;
         }
         .input-field:focus {
@@ -120,7 +120,9 @@ export default function Contact() {
           border-radius: 2px;
           cursor: pointer;
           overflow: hidden;
-          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+          transition: color 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+                      transform 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+                      box-shadow 0.4s cubic-bezier(0.23, 1, 0.32, 1);
         }
         .submit-btn::before {
           content: '';
@@ -154,12 +156,15 @@ export default function Contact() {
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
           width: 36px;
           height: 36px;
           border-radius: 50%;
           border: 1px solid ${C.border};
           background: ${C.surface};
+          transition: color 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+                      background-color 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+                      border-color 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+                      transform 0.35s cubic-bezier(0.23, 1, 0.32, 1);
         }
         .social-icon:hover {
           color: ${C.bg};
@@ -307,13 +312,14 @@ export default function Contact() {
               <form ref={formRef} onSubmit={sendEmail} className="flex flex-col gap-3">
 
                 <div className="field-group">
-                  <label className="input-label">Email</label>
-                  <input type="email" name="user_email" required className="input-field" />
+                  <label htmlFor="user_email" className="input-label">Email</label>
+                  <input id="user_email" type="email" name="user_email" required className="input-field" />
                 </div>
 
                 <div className="field-group">
-                  <label className="input-label">Message</label>
+                  <label htmlFor="message" className="input-label">Message</label>
                   <textarea
+                    id="message"
                     name="message"
                     rows={5}
                     required
