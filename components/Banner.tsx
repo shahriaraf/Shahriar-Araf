@@ -300,16 +300,6 @@ export default function Banner() {
         color: C.text,
       }}
     >
-      {/* Preload hint for the hero photo — belt-and-suspenders alongside
-          the priority <Image> below, so the LCP request is guaranteed to
-          be discoverable in the initial HTML at the highest fetch priority. */}
-      <link
-        rel="preload"
-        as="image"
-        href={headshot.src}
-        fetchPriority="high"
-      />
-
       <style>{`
         .photo-container {
           position: relative;
@@ -564,7 +554,7 @@ export default function Banner() {
         }}
       >
         {SOCIALS.map((s) => (
-          
+          <a
             key={s.label}
             href={s.href}
             target="_blank"
@@ -891,7 +881,7 @@ export default function Banner() {
               <polyline points="12 5 19 12 12 19" />
             </svg>
           </a>
-          
+          <a
             href="/assets/Araf-Full-Stack-Resume.pdf"
             download
             className="cta-secondary"
@@ -918,7 +908,7 @@ export default function Banner() {
         {/* Mobile-only social row — sits directly under the CTAs */}
         <div className="mobile-social">
           {SOCIALS.map((s) => (
-            
+            <a
               key={s.label}
               href={s.href}
               target="_blank"
