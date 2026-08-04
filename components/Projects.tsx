@@ -3,29 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
 import { FaGithub, FaAndroid, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { PortableText, PortableTextComponents } from "@portabletext/react";
 import type { WebProject, AppProject, Project } from "@/sanity/queries";
 import { urlFor } from "@/sanity/client";
-
-// ─── Premium Typography Stack ─────────────────────────────────────────────────
-const instrumentSerif = Instrument_Serif({
-  weight: "400",
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  variable: "--font-instrument-serif",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-});
+// Instrument Serif / Inter / JetBrains Mono are loaded once in app/fonts.ts
+// and applied at the root layout — their CSS variables are already
+// available here via inheritance, so no local font import is needed.
 
 type ProjectsProps = {
   webProjects: WebProject[];
@@ -688,7 +672,6 @@ export default function Projects({ webProjects, appProjects }: ProjectsProps) {
 
   return (
     <div
-      className={`${instrumentSerif.variable} ${inter.variable} ${jetbrainsMono.variable}`}
       style={{
         backgroundColor: C.bg,
         height: "100%",
