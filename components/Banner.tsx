@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { gsap } from "gsap";
-import headshot from "../public/araf-headshot (2).webp";
+import headshot from "../public/araf-headshot.webp";
 // Instrument Serif / Inter / JetBrains Mono are loaded once in app/fonts.ts
 // and applied at the root layout — their CSS variables are already
 // available here via inheritance, so no local font import is needed.
@@ -306,22 +306,22 @@ export default function Banner() {
           overflow: hidden;
         }
 
-        /* ── HOLOGRAM GLITCH LAYERS ──
-           No background-image here anymore — each layer now renders its
-           own <Image> (same src/quality/sizes as the base photo) so the
-           browser reuses the SAME cached network request instead of
-           firing a second, undiscoverable fetch for the raw file. */
+        /* ── HOLOGRAM GLITCH LAYERS — fixed for PNG images ── */
         .glitch-layer {
           position: absolute;
           top: 0; left: 0;
           width: 100%; height: 100%;
+          background-image: url("${headshot.src}");
+          background-repeat: no-repeat;
+          background-position: center 30%;
+          background-size: cover;
           opacity: 0;
           pointer-events: none;
           z-index: 15;
           padding: 0; margin: 0;
           will-change: transform, clip-path, opacity;
           transition: none;
-          overflow: hidden;
+          image-rendering: -webkit-optimize-contrast;
         }
         .glitch-layer.light {
           filter: grayscale(1) contrast(1.6) brightness(1.5);
@@ -616,6 +616,22 @@ export default function Banner() {
           </defs>
         </svg>
 
+        {/* Preload the raw headshot file used by the CSS glitch-layer
+            background-images below. Next's <Image priority> already
+            preloads the OPTIMIZED /_next/image URL for the real <img>,
+            but the .glitch-layer divs reference headshot.src directly
+            (the raw static asset path) as a CSS background-image — a
+            second, different URL that the browser can't discover from
+            the initial HTML scan the way it does an <img> tag. Lighthouse
+            was flagging that raw request as undiscoverable/unprioritized
+            and, because these overlay layers sit on top (z-index 15),
+            was even picking one of them as the LCP element itself.
+            React 19 hoists any <link> rendered in the tree into <head>,
+            so this guarantees the browser fetches it immediately at
+            high priority regardless of which layer ends up being the
+            LCP candidate. */}
+        <link rel="preload" as="image" href={headshot.src} fetchPriority="high" />
+
         {/* Photo container */}
         <div
           className="photo-container"
@@ -629,15 +645,12 @@ export default function Banner() {
             overflow: "hidden",
           }}
         >
-          {/* Base image — natural tone. This is the true LCP element:
-              priority + fetchPriority make it discoverable and
-              high-priority right in the initial HTML. */}
+          {/* Base image — natural tone */}
           <Image
             src={headshot}
             alt="Shahriar Araf"
             fill
             priority
-            fetchPriority="high"
             quality={90}
             sizes="(max-width: 768px) 100vw, 75vw"
             style={{
@@ -652,41 +665,11 @@ export default function Banner() {
             }}
           />
 
-          {/* Glitch layers — monochrome hologram effect.
-              Each layer reuses the SAME optimized image request as the
-              base photo above (identical src/quality/sizes ⇒ identical
-              generated URL ⇒ served from cache, no second network
-              fetch, nothing left "undiscoverable" for LCP purposes). */}
-          <div ref={cyanRef} className="glitch-layer light">
-            <Image
-              src={headshot}
-              alt=""
-              aria-hidden="true"
-              fill
-              quality={90}
-              sizes="(max-width: 768px) 100vw, 75vw"
-              loading="eager"
-              style={{
-                objectFit: "cover",
-                objectPosition: "center 30%",
-              }}
-            />
-          </div>
-          <div ref={redRef} className="glitch-layer ghost">
-            <Image
-              src={headshot}
-              alt=""
-              aria-hidden="true"
-              fill
-              quality={90}
-              sizes="(max-width: 768px) 100vw, 75vw"
-              loading="eager"
-              style={{
-                objectFit: "cover",
-                objectPosition: "center 30%",
-              }}
-            />
-          </div>
+          {/* Glitch layers — decorative monochrome hologram effect.
+              aria-hidden since they carry no content of their own (same
+              photo as the base <Image>, just re-filtered/offset). */}
+          <div ref={cyanRef} className="glitch-layer light" aria-hidden="true" />
+          <div ref={redRef} className="glitch-layer ghost" aria-hidden="true" />
 
           {/* Film grain overlay */}
           <div
