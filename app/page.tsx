@@ -1,6 +1,5 @@
 import dynamic from "next/dynamic";
 import Banner from "@/components/Banner";
-import RadialMenu from "@/components/RadialMenu";
 import { SectionStack, type PanelConfig } from "@/components/SectionStack";
 import { getWebProjects, getAppProjects, getSkills, getAbout } from "@/sanity/queries";
 
@@ -58,7 +57,6 @@ export default async function Home() {
 
   return (
     <main className="bg-black font-code">
-      <RadialMenu />
       <SectionStack panels={panels} />
     </main>
   );
