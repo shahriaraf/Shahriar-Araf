@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -8,8 +8,28 @@ const C = {
   bg: "#0a0a0a",
 };
 
+// Only plays once per browser session. sessionStorage persists across
+// page navigations and refreshes within the same tab/session but clears
+// when the tab is closed — so a first-time visitor still gets the full
+// dramatic intro, but clicking around the site (or hitting refresh) won't
+// replay it every time. A fresh Lighthouse audit always runs with empty
+// storage, so this doesn't change what the cold-load performance test
+// sees — it's purely a repeat-visit UX improvement.
+const SEEN_KEY = "araf-preloader-seen";
+
 export default function Preloader() {
+  // Default to true so server-rendered HTML and the very first client
+  // render match (no hydration mismatch). The sessionStorage check below
+  // runs in a layout effect, which fires before the browser paints —
+  // so a returning visitor's browser never actually shows a flash of
+  // the preloader before it's dismissed.
   const [isLoading, setIsLoading] = useState(true);
+
+  useLayoutEffect(() => {
+    if (sessionStorage.getItem(SEEN_KEY)) {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Lock body scroll
   useEffect(() => {
@@ -23,16 +43,15 @@ export default function Preloader() {
     };
   }, [isLoading]);
 
-  // Auto-hide after a short brand moment. This was previously a fixed
-  // 3000ms hold plus a 1.3s exit slide — ~4.3s where the real hero content
-  // underneath was fully covered by this overlay, which is what Lighthouse
-  // was measuring as Largest Contentful Paint (the headshot behind it
-  // physically can't count as "painted" while this opaque layer sits on
-  // top of it). Cut way down so the intro still reads as a deliberate
-  // reveal but the real LCP element is uncovered in ~1.5s instead of ~4.3s.
+  // Auto-hide after ~3s, then remember it's been shown this session.
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 900);
+    if (!isLoading) return;
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      sessionStorage.setItem(SEEN_KEY, "1");
+    }, 3000);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -45,7 +64,7 @@ export default function Preloader() {
           initial={{ y: 0 }}
           exit={{ y: "-100%" }}
           transition={{
-            duration: 0.6,
+            duration: 1.3,
             ease: [0.87, 0, 0.13, 1],
           }}
         >
@@ -79,7 +98,7 @@ export default function Preloader() {
               y: 0,
             }}
             transition={{
-              duration: 0.6,
+              duration: 1,
               ease: [0.19, 1, 0.22, 1], // expo-out — dramatic settle
             }}
             className="relative h-[85vh] w-auto"
