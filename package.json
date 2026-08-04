@@ -35,11 +35,10 @@
     "typescript": "^5"
   },
   "browserslist": [
-    "> 0.5%",
-    "last 2 versions",
-    "Firefox ESR",
-    "not dead",
-    "not ie 11",
-    "not op_mini all"
+    "chrome >= 93",
+    "edge >= 93",
+    "firefox >= 92",
+    "safari >= 15.4",
+    "not dead"
   ]
 }
