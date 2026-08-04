@@ -14,7 +14,6 @@ import Cursor from "@/components/Cursor";
 // exact same experience as before.
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-    console.log("AppShell pathname:", pathname); // temporary debug
   const isStudio = pathname?.startsWith("/studio");
 
   if (isStudio) {
