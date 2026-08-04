@@ -3,27 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
 import type { Skill } from "@/sanity/queries";
 import { urlFor } from "@/sanity/client";
-
-// ─── Premium Typography Stack ─────────────────────────────────────────────────
-const instrumentSerif = Instrument_Serif({
-  weight: "400",
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  variable: "--font-instrument-serif",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-});
+// Instrument Serif / Inter / JetBrains Mono are loaded once in app/fonts.ts
+// and applied at the root layout — their CSS variables are already
+// available here via inheritance, so no local font import is needed.
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type SkillsProps = { skills: Skill[] };
@@ -566,7 +550,7 @@ export default function Skills({ skills }: SkillsProps) {
 
   return (
     <section
-      className={`${instrumentSerif.variable} ${inter.variable} ${jetbrainsMono.variable} relative w-full h-[100dvh] flex flex-col overflow-hidden`}
+      className="relative w-full h-[100dvh] flex flex-col overflow-hidden"
       style={{
         backgroundColor: C.bg,
         fontFamily: "var(--font-inter), -apple-system, system-ui, sans-serif",
