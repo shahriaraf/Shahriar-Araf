@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { gsap } from "gsap";
 import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
-import headshot from "../public/araf headshot.png";
+import headshot from "../public/araf-headshot.webp";
 
 // ─── Premium Typography Stack ─────────────────────────────────────────────────
 const instrumentSerif = Instrument_Serif({
@@ -360,7 +360,10 @@ export default function Banner() {
         .social-btn {
           color:${C.muted};
           display:flex; align-items:center; justify-content:center;
-          transition: all .35s cubic-bezier(.23,1,.32,1);
+          transition: color .35s cubic-bezier(.23,1,.32,1),
+                      background-color .35s cubic-bezier(.23,1,.32,1),
+                      border-color .35s cubic-bezier(.23,1,.32,1),
+                      transform .35s cubic-bezier(.23,1,.32,1);
           width:40px; height:40px; border-radius:50%;
           border:1px solid ${C.border};
           background: ${C.surface};
@@ -387,7 +390,9 @@ export default function Banner() {
           border:1px solid ${C.emphasis};
           cursor:pointer;
           overflow:hidden;
-          transition: all .4s cubic-bezier(.23,1,.32,1);
+          transition: color .4s cubic-bezier(.23,1,.32,1),
+                      transform .4s cubic-bezier(.23,1,.32,1),
+                      box-shadow .4s cubic-bezier(.23,1,.32,1);
         }
         .cta-primary::before {
           content:''; position:absolute; inset:0;
@@ -426,7 +431,9 @@ export default function Banner() {
           border:1px solid ${C.borderStrong};
           border-radius:2px; cursor:pointer;
           overflow:hidden;
-          transition: all .4s cubic-bezier(.23,1,.32,1);
+          transition: color .4s cubic-bezier(.23,1,.32,1),
+                      border-color .4s cubic-bezier(.23,1,.32,1),
+                      transform .4s cubic-bezier(.23,1,.32,1);
         }
         .cta-secondary::before {
           content:''; position:absolute; inset:0;
